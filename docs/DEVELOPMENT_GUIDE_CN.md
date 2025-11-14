@@ -286,8 +286,9 @@ Skills 库提供了超过20种专业能力，能让 Agent 如同行业专家般�
 ✨ **这是本项目的核心亮点之一。**
 
 **更多信息：**
-- [Claude Skills 官方文档](https://github.com/anthropics/anthropic-quickstarts/tree/main/claude-skills)
-- [Anthropic 博客：为真实世界装备智能体](https://www.anthropic.com/news/equipping-agents-for-the-real-world)
+
+- [Claude Skills 官方文档](https://docs.claude.com/zh-CN/docs/agents-and-tools/agent-skills)
+- [Anthropic 博客：为真实世界装备智能体](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)
 
 ### 3.5 添加新的Skill
 

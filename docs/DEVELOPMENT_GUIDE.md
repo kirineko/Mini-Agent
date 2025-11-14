@@ -285,8 +285,9 @@ Skills provide 20+ professional capabilities, making the Agent work like a profe
 ✨ **This is one of the core highlights of this project.** For details, see the "Configure Skills" section below.
 
 **More information:**
-- [Claude Skills Official Documentation](https://github.com/anthropics/anthropic-quickstarts/tree/main/claude-skills)
-- [Anthropic Blog: Equipping agents for the real world](https://www.anthropic.com/news/equipping-agents-for-the-real-world)
+
+- [Claude Skills Official Documentation](https://docs.claude.com/zh-CN/docs/agents-and-tools/agent-skills)
+- [Anthropic Blog: Equipping agents for the real world](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)
 
 ### 3.5 Adding a New Skill
 
