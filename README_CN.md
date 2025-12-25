@@ -2,7 +2,7 @@
 
 [English](./README.md) | 中文
 
-**Mini Agent** 是一个极简但专业的演示项目，旨在展示使用 MiniMax M2 模型构建 Agent 的最佳实践。项目通过兼容 Anthropic 的 API，完全支持交错思维（interleaved thinking），从而解锁 M2 模型在处理长而复杂的任务时强大的推理能力。
+**Mini Agent** 是一个极简但专业的演示项目，旨在展示使用 MiniMax M2.1 模型构建 Agent 的最佳实践。项目通过兼容 Anthropic 的 API，完全支持交错思维（interleaved thinking），从而解锁 M2 模型在处理长而复杂的任务时强大的推理能力。
 
 该项目具备一系列为稳健、智能的 Agent 开发而设计的特性：
 
@@ -115,7 +115,7 @@ nano ~/.mini-agent/config/config.yaml
 api_key: "YOUR_API_KEY_HERE"          # 填入第 1 步获取的 API Key
 api_base: "https://api.minimaxi.com"  # 国内版
 # api_base: "https://api.minimax.io"  # 海外版（如使用海外平台，请取消本行注释）
-model: "MiniMax-M2"
+model: "MiniMax-M2.1"
 ```
 
 **开始使用：**
@@ -182,7 +182,7 @@ vim mini_agent/config/config.yaml  # 或使用您偏好的编辑器
 api_key: "YOUR_API_KEY_HERE"          # 填入第 1 步获取的 API Key
 api_base: "https://api.minimaxi.com"  # 国内版
 # api_base: "https://api.minimax.io"  # 海外版（如使用海外平台，请修改此行）
-model: "MiniMax-M2"
+model: "MiniMax-M2.1"
 max_steps: 100
 workspace_dir: "./workspace"
 ```

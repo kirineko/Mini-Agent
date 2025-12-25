@@ -26,7 +26,7 @@ class OpenAIClient(LLMClientBase):
         self,
         api_key: str,
         api_base: str = "https://api.minimaxi.com/v1",
-        model: str = "MiniMax-M2",
+        model: str = "MiniMax-M2.1",
         retry_config: RetryConfig | None = None,
     ):
         """Initialize OpenAI client.
@@ -34,7 +34,7 @@ class OpenAIClient(LLMClientBase):
         Args:
             api_key: API key for authentication
             api_base: Base URL for the API (default: MiniMax OpenAI endpoint)
-            model: Model name to use (default: MiniMax-M2)
+            model: Model name to use (default: MiniMax-M2.1)
             retry_config: Optional retry configuration
         """
         super().__init__(api_key, api_base, model, retry_config)

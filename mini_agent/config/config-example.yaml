@@ -19,7 +19,7 @@
 api_key: "YOUR_API_KEY_HERE"  # Replace with your MiniMax API Key
 api_base: "https://api.minimax.io"   # Global users (default)
 # api_base: "https://api.minimaxi.com"  # China users
-model: "MiniMax-M2"
+model: "MiniMax-M2.1"
 # LLM provider: "anthropic" or "openai"
 # The LLMClient will automatically append /anthropic or /v1 to api_base based on provider
 provider: "anthropic"  # Default: anthropic

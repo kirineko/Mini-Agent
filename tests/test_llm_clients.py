@@ -33,7 +33,7 @@ async def test_anthropic_simple_completion():
     client = AnthropicClient(
         api_key=config["api_key"],
         api_base="https://api.minimaxi.com/anthropic",
-        model=config.get("model", "MiniMax-M2"),
+        model=config.get("model", "MiniMax-M2.1"),
         retry_config=RetryConfig(enabled=True, max_retries=2),
     )
 
@@ -74,7 +74,7 @@ async def test_openai_simple_completion():
     client = OpenAIClient(
         api_key=config["api_key"],
         api_base="https://api.minimaxi.com/v1",
-        model=config.get("model", "MiniMax-M2"),
+        model=config.get("model", "MiniMax-M2.1"),
         retry_config=RetryConfig(enabled=True, max_retries=2),
     )
 
@@ -115,7 +115,7 @@ async def test_anthropic_tool_calling():
     client = AnthropicClient(
         api_key=config["api_key"],
         api_base="https://api.minimaxi.com/anthropic",
-        model=config.get("model", "MiniMax-M2"),
+        model=config.get("model", "MiniMax-M2.1"),
     )
 
     # Define tool using dict format
@@ -175,7 +175,7 @@ async def test_openai_tool_calling():
     client = OpenAIClient(
         api_key=config["api_key"],
         api_base="https://api.minimaxi.com/v1",
-        model=config.get("model", "MiniMax-M2"),
+        model=config.get("model", "MiniMax-M2.1"),
     )
 
     # Define tool using dict format (will be converted internally for OpenAI)
@@ -235,7 +235,7 @@ async def test_multi_turn_conversation():
     client = AnthropicClient(
         api_key=config["api_key"],
         api_base="https://api.minimaxi.com/anthropic",
-        model=config.get("model", "MiniMax-M2"),
+        model=config.get("model", "MiniMax-M2.1"),
     )
 
     # Define tool using dict format

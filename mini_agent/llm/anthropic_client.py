@@ -25,7 +25,7 @@ class AnthropicClient(LLMClientBase):
         self,
         api_key: str,
         api_base: str = "https://api.minimaxi.com/anthropic",
-        model: str = "MiniMax-M2",
+        model: str = "MiniMax-M2.1",
         retry_config: RetryConfig | None = None,
     ):
         """Initialize Anthropic client.
@@ -33,7 +33,7 @@ class AnthropicClient(LLMClientBase):
         Args:
             api_key: API key for authentication
             api_base: Base URL for the API (default: MiniMax Anthropic endpoint)
-            model: Model name to use (default: MiniMax-M2)
+            model: Model name to use (default: MiniMax-M2.1)
             retry_config: Optional retry configuration
         """
         super().__init__(api_key, api_base, model, retry_config)

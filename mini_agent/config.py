@@ -24,7 +24,7 @@ class LLMConfig(BaseModel):
 
     api_key: str
     api_base: str = "https://api.minimax.io"
-    model: str = "MiniMax-M2"
+    model: str = "MiniMax-M2.1"
     provider: str = "anthropic"  # "anthropic" or "openai"
     retry: RetryConfig = Field(default_factory=RetryConfig)
 
@@ -116,7 +116,7 @@ class Config(BaseModel):
         llm_config = LLMConfig(
             api_key=data["api_key"],
             api_base=data.get("api_base", "https://api.minimax.io"),
-            model=data.get("model", "MiniMax-M2"),
+            model=data.get("model", "MiniMax-M2.1"),
             provider=data.get("provider", "anthropic"),
             retry=retry_config,
         )
