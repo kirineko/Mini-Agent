@@ -11,9 +11,11 @@ Examples:
 
 import argparse
 import asyncio
+import platform
+import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -70,6 +72,99 @@ class Colors:
     BG_BLUE = "\033[44m"
 
 
+def get_log_directory() -> Path:
+    """Get the log directory path."""
+    return Path.home() / ".mini-agent" / "log"
+
+
+def show_log_directory(open_file_manager: bool = True) -> None:
+    """Show log directory contents and optionally open file manager.
+    
+    Args:
+        open_file_manager: Whether to open the system file manager
+    """
+    log_dir = get_log_directory()
+    
+    print(f"\n{Colors.BRIGHT_CYAN}📁 Log Directory: {log_dir}{Colors.RESET}")
+    
+    if not log_dir.exists() or not log_dir.is_dir():
+        print(f"{Colors.RED}Log directory does not exist: {log_dir}{Colors.RESET}\n")
+        return
+    
+    log_files = list(log_dir.glob("*.log"))
+    
+    if not log_files:
+        print(f"{Colors.YELLOW}No log files found in directory.{Colors.RESET}\n")
+        return
+    
+    # Sort by modification time (newest first)
+    log_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+    
+    print(f"{Colors.DIM}{'─' * 60}{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.BRIGHT_YELLOW}Available Log Files (newest first):{Colors.RESET}")
+    
+    for i, log_file in enumerate(log_files[:10], 1):
+        mtime = datetime.fromtimestamp(log_file.stat().st_mtime)
+        size = log_file.stat().st_size
+        size_str = f"{size:,}" if size < 1024 else f"{size / 1024:.1f}K"
+        print(f"  {Colors.GREEN}{i:2d}.{Colors.RESET} {Colors.BRIGHT_WHITE}{log_file.name}{Colors.RESET}")
+        print(f"      {Colors.DIM}Modified: {mtime.strftime('%Y-%m-%d %H:%M:%S')}, Size: {size_str}{Colors.RESET}")
+    
+    if len(log_files) > 10:
+        print(f"  {Colors.DIM}... and {len(log_files) - 10} more files{Colors.RESET}")
+    
+    print(f"{Colors.DIM}{'─' * 60}{Colors.RESET}")
+    
+    # Open file manager
+    if open_file_manager:
+        _open_directory_in_file_manager(log_dir)
+    
+    print()
+
+
+def _open_directory_in_file_manager(directory: Path) -> None:
+    """Open directory in system file manager (cross-platform)."""
+    system = platform.system()
+    
+    try:
+        if system == "Darwin":
+            subprocess.run(["open", str(directory)], check=False)
+        elif system == "Windows":
+            subprocess.run(["explorer", str(directory)], check=False)
+        elif system == "Linux":
+            subprocess.run(["xdg-open", str(directory)], check=False)
+    except FileNotFoundError:
+        print(f"{Colors.YELLOW}Could not open file manager. Please navigate manually.{Colors.RESET}")
+    except Exception as e:
+        print(f"{Colors.YELLOW}Error opening file manager: {e}{Colors.RESET}")
+
+
+def read_log_file(filename: str) -> None:
+    """Read and display a specific log file.
+    
+    Args:
+        filename: The log filename to read
+    """
+    log_dir = get_log_directory()
+    log_file = log_dir / filename
+    
+    if not log_file.exists() or not log_file.is_file():
+        print(f"\n{Colors.RED}❌ Log file not found: {log_file}{Colors.RESET}\n")
+        return
+    
+    print(f"\n{Colors.BRIGHT_CYAN}📄 Reading: {log_file}{Colors.RESET}")
+    print(f"{Colors.DIM}{'─' * 80}{Colors.RESET}")
+    
+    try:
+        with open(log_file, "r", encoding="utf-8") as f:
+            content = f.read()
+        print(content)
+        print(f"{Colors.DIM}{'─' * 80}{Colors.RESET}")
+        print(f"\n{Colors.GREEN}✅ End of file{Colors.RESET}\n")
+    except Exception as e:
+        print(f"\n{Colors.RED}❌ Error reading file: {e}{Colors.RESET}\n")
+
+
 def print_banner():
     """Print welcome banner with proper alignment"""
     BOX_WIDTH = 58
@@ -98,6 +193,8 @@ def print_help():
   {Colors.BRIGHT_GREEN}/clear{Colors.RESET}     - Clear session history (keep system prompt)
   {Colors.BRIGHT_GREEN}/history{Colors.RESET}   - Show current session message count
   {Colors.BRIGHT_GREEN}/stats{Colors.RESET}     - Show session statistics
+  {Colors.BRIGHT_GREEN}/log{Colors.RESET}       - Show log directory and recent files
+  {Colors.BRIGHT_GREEN}/log <file>{Colors.RESET} - Read a specific log file
   {Colors.BRIGHT_GREEN}/exit{Colors.RESET}      - Exit program (also: exit, quit, q)
 
 {Colors.BOLD}{Colors.BRIGHT_YELLOW}Keyboard Shortcuts:{Colors.RESET}
@@ -175,6 +272,8 @@ def print_stats(agent: Agent, session_start: datetime):
     print(f"    - Assistant Replies: {Colors.BRIGHT_BLUE}{assistant_msgs}{Colors.RESET}")
     print(f"    - Tool Calls: {Colors.BRIGHT_YELLOW}{tool_msgs}{Colors.RESET}")
     print(f"  Available Tools: {len(agent.tools)}")
+    if agent.api_total_tokens > 0:
+        print(f"  API Tokens Used: {Colors.BRIGHT_MAGENTA}{agent.api_total_tokens:,}{Colors.RESET}")
     print(f"{Colors.DIM}{'─' * 40}{Colors.RESET}\n")
 
 
@@ -191,6 +290,8 @@ def parse_args() -> argparse.Namespace:
 Examples:
   mini-agent                              # Use current directory as workspace
   mini-agent --workspace /path/to/dir     # Use specific workspace directory
+  mini-agent log                          # Show log directory and recent files
+  mini-agent log agent_run_xxx.log        # Read a specific log file
         """,
     )
     parser.add_argument(
@@ -205,6 +306,18 @@ Examples:
         "-v",
         action="version",
         version="mini-agent 0.1.0",
+    )
+
+    # Subcommands
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # log subcommand
+    log_parser = subparsers.add_parser("log", help="Show log directory or read log files")
+    log_parser.add_argument(
+        "filename",
+        nargs="?",
+        default=None,
+        help="Log filename to read (optional, shows directory if omitted)",
     )
 
     return parser.parse_args()
@@ -471,7 +584,7 @@ async def run_agent(workspace_dir: Path):
     # 9. Setup prompt_toolkit session
     # Command completer
     command_completer = WordCompleter(
-        ["/help", "/clear", "/history", "/stats", "/exit", "/quit", "/q"],
+        ["/help", "/clear", "/history", "/stats", "/log", "/exit", "/quit", "/q"],
         ignore_case=True,
         sentence=True,
     )
@@ -560,6 +673,18 @@ async def run_agent(workspace_dir: Path):
                     print_stats(agent, session_start)
                     continue
 
+                elif command == "/log" or command.startswith("/log "):
+                    # Parse /log command
+                    parts = user_input.split(maxsplit=1)
+                    if len(parts) == 1:
+                        # /log - show log directory
+                        show_log_directory(open_file_manager=True)
+                    else:
+                        # /log <filename> - read specific log file
+                        filename = parts[1].strip("\"'")
+                        read_log_file(filename)
+                    continue
+
                 else:
                     print(f"{Colors.RED}❌ Unknown command: {user_input}{Colors.RESET}")
                     print(f"{Colors.DIM}Type /help to see available commands{Colors.RESET}\n")
@@ -601,6 +726,14 @@ def main():
     """Main entry point for CLI"""
     # Parse command line arguments
     args = parse_args()
+
+    # Handle log subcommand
+    if args.command == "log":
+        if args.filename:
+            read_log_file(args.filename)
+        else:
+            show_log_directory(open_file_manager=True)
+        return
 
     # Determine workspace directory
     # Expand ~ to user home directory for portability
