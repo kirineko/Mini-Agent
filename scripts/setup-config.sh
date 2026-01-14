@@ -48,9 +48,9 @@ else
     echo -e "${RED}   ✗ Failed to download: config.yaml${NC}"
 fi
 
-# Download mcp.json (optional)
-if curl -fsSL "$GITHUB_RAW_URL/mcp.json" -o "$CONFIG_DIR/mcp.json" 2>/dev/null; then
-    echo -e "${GREEN}   ✓ Downloaded: mcp.json${NC}"
+# Download mcp-example.json as mcp.json (optional, user should customize)
+if curl -fsSL "$GITHUB_RAW_URL/mcp-example.json" -o "$CONFIG_DIR/mcp.json" 2>/dev/null; then
+    echo -e "${GREEN}   ✓ Downloaded: mcp.json (from template)${NC}"
     FILES_COPIED=$((FILES_COPIED + 1))
 fi
 

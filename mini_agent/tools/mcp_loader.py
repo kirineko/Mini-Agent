@@ -289,12 +289,43 @@ def _determine_connection_type(server_config: dict) -> ConnectionType:
     return "stdio"
 
 
+def _resolve_mcp_config_path(config_path: str) -> Path | None:
+    """
+    Resolve MCP config path with fallback logic.
+
+    Priority:
+    1. If the specified path exists, use it
+    2. If mcp.json doesn't exist, try mcp-example.json in the same directory
+    3. Return None if no config found
+
+    Args:
+        config_path: User-specified config path
+
+    Returns:
+        Resolved Path object or None if not found
+    """
+    config_file = Path(config_path)
+
+    # If specified path exists, use it directly
+    if config_file.exists():
+        return config_file
+
+    # Fallback: if looking for mcp.json, try mcp-example.json
+    if config_file.name == "mcp.json":
+        example_file = config_file.parent / "mcp-example.json"
+        if example_file.exists():
+            print(f"mcp.json not found, using template: {example_file}")
+            return example_file
+
+    return None
+
+
 async def load_mcp_tools_async(config_path: str = "mcp.json") -> list[Tool]:
     """
     Load MCP tools from config file.
 
     This function:
-    1. Reads the MCP config file
+    1. Reads the MCP config file (with fallback to mcp-example.json)
     2. Connects to each server (STDIO or URL-based)
     3. Fetches tool definitions
     4. Wraps them as Tool objects
@@ -308,6 +339,10 @@ async def load_mcp_tools_async(config_path: str = "mcp.json") -> list[Tool]:
     - "execute_timeout": float - Tool execution timeout in seconds
     - "sse_read_timeout": float - SSE read timeout in seconds
 
+    Note:
+    - If mcp.json is not found, will automatically fallback to mcp-example.json
+    - User-specific mcp.json should be created by copying mcp-example.json
+
     Args:
         config_path: Path to MCP configuration file (default: "mcp.json")
 
@@ -316,9 +351,9 @@ async def load_mcp_tools_async(config_path: str = "mcp.json") -> list[Tool]:
     """
     global _mcp_connections
 
-    config_file = Path(config_path)
+    config_file = _resolve_mcp_config_path(config_path)
 
-    if not config_file.exists():
+    if config_file is None:
         print(f"MCP config not found: {config_path}")
         return []
 
