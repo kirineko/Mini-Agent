@@ -35,6 +35,7 @@ This project comes packed with features designed for a robust and intelligent ag
     - [SSL Certificate Error](#ssl-certificate-error)
     - [Module Not Found Error](#module-not-found-error)
   - [Related Documentation](#related-documentation)
+  - [Community](#community)
   - [Contributing](#contributing)
   - [License](#license)
   - [References](#references)
@@ -312,6 +313,12 @@ python -m mini_agent.cli
 
 - [Development Guide](docs/DEVELOPMENT_GUIDE.md) - Detailed development and configuration guidance
 - [Production Guide](docs/PRODUCTION_GUIDE.md) - Best practices for production deployment
+
+## Community
+
+Join the MiniMax official community to get help, share ideas, and stay updated:
+
+- **WeChat Group**: Scan the QR code on [Contact Us](https://platform.minimaxi.com/docs/faq/contact-us) page to join
 
 ## Contributing
 

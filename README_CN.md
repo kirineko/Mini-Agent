@@ -35,6 +35,7 @@
     - [SSL 证书错误](#ssl-证书错误)
     - [模块未找到错误](#模块未找到错误)
   - [相关文档](#相关文档)
+  - [社区](#社区)
   - [贡献](#贡献)
   - [许可证](#许可证)
   - [参考资源](#参考资源)
@@ -313,6 +314,12 @@ python -m mini_agent.cli
 
 - [开发指南](docs/DEVELOPMENT_GUIDE_CN.md) - 详细的开发和配置指引
 - [生产环境指南](docs/PRODUCTION_DEPLOYMENT_GUIDE_CN.md) - 生产部署最佳实践
+
+## 社区
+
+加入 MiniMax 官方社区，获取帮助、分享想法、了解最新动态：
+
+- **微信交流群**：扫描 [联系我们](https://platform.minimaxi.com/docs/faq/contact-us) 页面的二维码加入官方交流群
 
 ## 贡献
 
