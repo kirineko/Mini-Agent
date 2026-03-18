@@ -16,6 +16,7 @@ from .base import Tool, ToolResult
 
 # Connection type aliases
 ConnectionType = Literal["stdio", "sse", "http", "streamable_http"]
+DISCONNECT_TIMEOUT_SECONDS = 5.0
 
 
 @dataclass
@@ -155,6 +156,10 @@ class MCPServerConnection:
         self.session: ClientSession | None = None
         self.exit_stack: AsyncExitStack | None = None
         self.tools: list[MCPTool] = []
+        self._shutdown_event: asyncio.Event | None = None
+        self._connected_event: asyncio.Event | None = None
+        self._lifecycle_task: asyncio.Task[None] | None = None
+        self._connected = False
 
     def _get_connect_timeout(self) -> float:
         """Get effective connect timeout."""
@@ -170,6 +175,22 @@ class MCPServerConnection:
 
     async def connect(self) -> bool:
         """Connect to the MCP server with timeout protection."""
+        if self._lifecycle_task and not self._lifecycle_task.done():
+            return self._connected
+
+        self.tools = []
+        self.session = None
+        self.exit_stack = None
+        self._connected = False
+        self._shutdown_event = asyncio.Event()
+        self._connected_event = asyncio.Event()
+        self._lifecycle_task = asyncio.create_task(self._connection_lifecycle())
+
+        await self._connected_event.wait()
+        return self._connected
+
+    async def _connection_lifecycle(self) -> None:
+        """Own the MCP transport lifecycle in a single task."""
         connect_timeout = self._get_connect_timeout()
 
         try:
@@ -207,29 +228,50 @@ class MCPServerConnection:
                 )
                 self.tools.append(mcp_tool)
 
+            self._connected = True
             conn_info = self.url if self.url else self.command
             print(f"✓ Connected to MCP server '{self.name}' ({self.connection_type}: {conn_info}) - loaded {len(self.tools)} tools")
             for tool in self.tools:
                 desc = tool.description[:60] if len(tool.description) > 60 else tool.description
                 print(f"  - {tool.name}: {desc}...")
-            return True
+
+            if self._connected_event and not self._connected_event.is_set():
+                self._connected_event.set()
+
+            if self._shutdown_event:
+                await self._shutdown_event.wait()
 
         except TimeoutError:
             print(f"✗ Connection to MCP server '{self.name}' timed out after {connect_timeout}s")
-            if self.exit_stack:
-                await self.exit_stack.aclose()
-                self.exit_stack = None
-            return False
+            if self._connected_event and not self._connected_event.is_set():
+                self._connected_event.set()
+
+        except asyncio.CancelledError:
+            if self._connected_event and not self._connected_event.is_set():
+                self._connected_event.set()
+            raise
 
         except Exception as e:
             print(f"✗ Failed to connect to MCP server '{self.name}': {e}")
-            if self.exit_stack:
-                await self.exit_stack.aclose()
-                self.exit_stack = None
+            if self._connected_event and not self._connected_event.is_set():
+                self._connected_event.set()
             import traceback
 
             traceback.print_exc()
-            return False
+
+        finally:
+            stack = self.exit_stack
+            self.exit_stack = None
+            self.session = None
+
+            try:
+                if stack:
+                    await stack.aclose()
+            finally:
+                self._connected = False
+                self._shutdown_event = None
+                if self._connected_event and not self._connected_event.is_set():
+                    self._connected_event.set()
 
     async def _connect_stdio(self):
         """Connect via STDIO transport."""
@@ -268,10 +310,23 @@ class MCPServerConnection:
 
     async def disconnect(self):
         """Properly disconnect from the MCP server."""
-        if self.exit_stack:
-            await self.exit_stack.aclose()
-            self.exit_stack = None
-            self.session = None
+        lifecycle_task = self._lifecycle_task
+        if not lifecycle_task:
+            return
+
+        if self._shutdown_event and not self._shutdown_event.is_set():
+            self._shutdown_event.set()
+
+        try:
+            await asyncio.wait_for(lifecycle_task, timeout=DISCONNECT_TIMEOUT_SECONDS)
+        except TimeoutError:
+            print(
+                f"✗ Timed out while disconnecting MCP server '{self.name}' after "
+                f"{DISCONNECT_TIMEOUT_SECONDS}s"
+            )
+        finally:
+            if self._lifecycle_task is lifecycle_task:
+                self._lifecycle_task = None
 
 
 # Global connections registry
@@ -421,6 +476,9 @@ async def load_mcp_tools_async(config_path: str = "mcp.json") -> list[Tool]:
 async def cleanup_mcp_connections():
     """Clean up all MCP connections."""
     global _mcp_connections
-    for connection in _mcp_connections:
-        await connection.disconnect()
+    for connection in list(_mcp_connections):
+        try:
+            await connection.disconnect()
+        except Exception as e:
+            print(f"✗ Error cleaning up MCP server '{connection.name}': {e}")
     _mcp_connections.clear()

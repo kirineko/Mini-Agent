@@ -3,10 +3,13 @@
 import asyncio
 import json
 import tempfile
+from contextlib import asynccontextmanager
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
+import mini_agent.tools.mcp_loader as mcp_loader
 from mini_agent.tools.mcp_loader import (
     MCPServerConnection,
     MCPTimeoutConfig,
@@ -252,6 +255,64 @@ class TestMCPServerConnectionTimeout:
             execute_timeout=180.0,
         )
         assert conn._get_execute_timeout() == 180.0
+
+
+@pytest.mark.asyncio
+async def test_disconnect_runs_cleanup_in_connection_owner_task(monkeypatch):
+    """Disconnect should succeed even when called from a different asyncio task."""
+
+    @asynccontextmanager
+    async def fake_stdio_client(_server_params):
+        owner_task = asyncio.current_task()
+        yield object(), object()
+        if asyncio.current_task() is not owner_task:
+            raise RuntimeError("stdio_client exited in a different task")
+
+    class FakeClientSession:
+        def __init__(self, _read_stream, _write_stream):
+            self._owner_task = None
+
+        async def __aenter__(self):
+            self._owner_task = asyncio.current_task()
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            if asyncio.current_task() is not self._owner_task:
+                raise RuntimeError("ClientSession exited in a different task")
+            return False
+
+        async def initialize(self):
+            return None
+
+        async def list_tools(self):
+            return SimpleNamespace(
+                tools=[
+                    SimpleNamespace(
+                        name="fake_tool",
+                        description="fake tool",
+                        inputSchema={},
+                    )
+                ]
+            )
+
+    monkeypatch.setattr(mcp_loader, "stdio_client", fake_stdio_client)
+    monkeypatch.setattr(mcp_loader, "ClientSession", FakeClientSession)
+
+    conn = MCPServerConnection(
+        name="test-owner-task",
+        connection_type="stdio",
+        command="fake-command",
+    )
+
+    assert await conn.connect() is True
+    assert [tool.name for tool in conn.tools] == ["fake_tool"]
+
+    disconnect_task = asyncio.create_task(conn.disconnect())
+    await disconnect_task
+
+    assert disconnect_task.exception() is None
+    assert conn.session is None
+    assert conn.exit_stack is None
 
 
 # =============================================================================
